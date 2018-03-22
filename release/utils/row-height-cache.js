@@ -32,7 +32,7 @@ var RowHeightCache = /** @class */ (function () {
      * @param detailRowHeight The detail row height.
      */
     RowHeightCache.prototype.initCache = function (details) {
-        var rows = details.rows, rowHeight = details.rowHeight, detailRowHeight = details.detailRowHeight, externalVirtual = details.externalVirtual, rowCount = details.rowCount, rowIndexes = details.rowIndexes, rowExpansions = details.rowExpansions;
+        var rows = details.rows, groupedRows = details.groupedRows, rowHeight = details.rowHeight, detailRowHeight = details.detailRowHeight, externalVirtual = details.externalVirtual, rowCount = details.rowCount, rowIndexes = details.rowIndexes, rowExpansions = details.rowExpansions;
         var isFn = typeof rowHeight === 'function';
         var isDetailFn = typeof detailRowHeight === 'function';
         if (!isFn && isNaN(rowHeight)) {
@@ -42,30 +42,43 @@ var RowHeightCache = /** @class */ (function () {
         if (!isDetailFn && isNaN(detailRowHeight)) {
             throw new Error("Row Height cache initialization failed. Please ensure that 'detailRowHeight' is a\n        valid number or function value: (" + detailRowHeight + ") when 'scrollbarV' is enabled.");
         }
-        var n = externalVirtual ? rowCount : rows.length;
+        var l = groupedRows ? groupedRows.length : rows.length;
+        var n = externalVirtual ? rowCount : l;
         this.treeArray = new Array(n);
         for (var i = 0; i < n; ++i) {
             this.treeArray[i] = 0;
         }
-        for (var i = 0; i < n; ++i) {
-            var row = rows[i];
-            var currentRowHeight = rowHeight;
-            if (isFn) {
-                currentRowHeight = rowHeight(row);
-            }
-            // Add the detail row height to the already expanded rows.
-            // This is useful for the table that goes through a filter or sort.
-            var expanded = rowExpansions.get(row);
-            if (row && expanded === 1) {
-                if (isDetailFn) {
-                    var index = rowIndexes.get(row);
-                    currentRowHeight += detailRowHeight(row, index);
+        if (groupedRows) {
+            for (var i = 0; i < n; ++i) {
+                var group = groupedRows[i];
+                var currentRowHeight = rowHeight;
+                if (isFn) {
+                    currentRowHeight = rowHeight(group);
                 }
-                else {
-                    currentRowHeight += detailRowHeight;
-                }
+                this.update(i, currentRowHeight);
             }
-            this.update(i, currentRowHeight);
+        }
+        else {
+            for (var i = 0; i < n; ++i) {
+                var row = rows[i];
+                var currentRowHeight = rowHeight;
+                if (isFn) {
+                    currentRowHeight = rowHeight(row);
+                }
+                // Add the detail row height to the already expanded rows.
+                // This is useful for the table that goes through a filter or sort.
+                var expanded = rowExpansions.get(row);
+                if (row && expanded === 1) {
+                    if (isDetailFn) {
+                        var index = rowIndexes.get(row);
+                        currentRowHeight += detailRowHeight(row, index);
+                    }
+                    else {
+                        currentRowHeight += detailRowHeight;
+                    }
+                }
+                this.update(i, currentRowHeight);
+            }
         }
     };
     /**

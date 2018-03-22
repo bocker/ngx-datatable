@@ -281,6 +281,7 @@ var DataTableBodyComponent = /** @class */ (function () {
             while (rowIndex < last && rowIndex < this.groupedRows.length) {
                 // Add the groups into this page
                 var group = this.groupedRows[rowIndex];
+                this.rowIndexes.set(group, rowIndex);
                 temp[idx] = group;
                 idx++;
                 // Group index in this context
@@ -369,8 +370,9 @@ var DataTableBodyComponent = /** @class */ (function () {
             var idx = 0;
             if (this.groupedRows) {
                 // Get the latest row rowindex in a group
-                var row = rows[rows.length - 1];
-                idx = row ? this.getRowIndex(row) : 0;
+                // const row = rows[rows.length - 1];
+                // idx = row ? this.getRowIndex(row) : 0;
+                idx = this.getRowIndex(rows);
             }
             else {
                 idx = this.getRowIndex(rows);
@@ -437,6 +439,7 @@ var DataTableBodyComponent = /** @class */ (function () {
         if (this.rows && this.rows.length) {
             this.rowHeightsCache.initCache({
                 rows: this.rows,
+                groupedRows: this.groupedRows,
                 rowHeight: this.rowHeight,
                 detailRowHeight: this.getDetailRowHeight,
                 externalVirtual: this.scrollbarV && this.externalPaging,

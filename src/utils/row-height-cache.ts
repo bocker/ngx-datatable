@@ -31,7 +31,8 @@ export class RowHeightCache {
    * @param detailRowHeight The detail row height.
    */
   initCache(details: any): void {
-    const { rows, rowHeight, detailRowHeight, externalVirtual, rowCount, rowIndexes, rowExpansions } = details;
+    const { rows, groupedRows, rowHeight, detailRowHeight,
+            externalVirtual, rowCount, rowIndexes, rowExpansions } = details;
     const isFn = typeof rowHeight === 'function';
     const isDetailFn = typeof detailRowHeight === 'function';
 
@@ -46,33 +47,45 @@ export class RowHeightCache {
         valid number or function value: (${detailRowHeight}) when 'scrollbarV' is enabled.`);
     }
 
-    const n = externalVirtual ? rowCount : rows.length;
+    const l = groupedRows ? groupedRows.length : rows.length;
+    const n = externalVirtual ? rowCount : l;
     this.treeArray = new Array(n);
 
     for(let i = 0; i < n; ++i) {
       this.treeArray[i] = 0;
     }
 
-    for(let i = 0; i < n; ++i) {
-      const row = rows[i];
-      let currentRowHeight = rowHeight;
-      if(isFn) {
-        currentRowHeight = rowHeight(row);
-      }
-
-      // Add the detail row height to the already expanded rows.
-      // This is useful for the table that goes through a filter or sort.
-      const expanded = rowExpansions.get(row);
-      if(row && expanded === 1) {
-        if(isDetailFn) {
-          const index = rowIndexes.get(row);
-          currentRowHeight += detailRowHeight(row, index);
-        } else {
-          currentRowHeight += detailRowHeight;
+    if (groupedRows) {
+      for (let i = 0; i < n; ++i) {
+        const group = groupedRows[i];
+        let currentRowHeight = rowHeight;
+        if (isFn) {
+          currentRowHeight = rowHeight(group);
         }
+        this.update(i, currentRowHeight);
       }
+    } else {
+      for(let i = 0; i < n; ++i) {
+        const row = rows[i];
+        let currentRowHeight = rowHeight;
+        if(isFn) {
+          currentRowHeight = rowHeight(row);
+        }
 
-      this.update(i, currentRowHeight);
+        // Add the detail row height to the already expanded rows.
+        // This is useful for the table that goes through a filter or sort.
+        const expanded = rowExpansions.get(row);
+        if(row && expanded === 1) {
+          if(isDetailFn) {
+            const index = rowIndexes.get(row);
+            currentRowHeight += detailRowHeight(row, index);
+          } else {
+            currentRowHeight += detailRowHeight;
+          }
+        }
+
+        this.update(i, currentRowHeight);
+      }
     }
   }
 

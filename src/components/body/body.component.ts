@@ -372,6 +372,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
       while (rowIndex < last && rowIndex < this.groupedRows.length) {
         // Add the groups into this page
         const group = this.groupedRows[rowIndex];
+        this.rowIndexes.set(group, rowIndex);
         temp[idx] = group;
         idx++;
 
@@ -484,8 +485,9 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
 
       if (this.groupedRows) {
         // Get the latest row rowindex in a group
-        const row = rows[rows.length - 1];
-        idx = row ? this.getRowIndex(row) : 0;
+        // const row = rows[rows.length - 1];
+        // idx = row ? this.getRowIndex(row) : 0;
+        idx = this.getRowIndex(rows);
       } else {
         idx = this.getRowIndex(rows);
       }
@@ -557,6 +559,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     if (this.rows && this.rows.length) {
       this.rowHeightsCache.initCache({
         rows: this.rows,
+        groupedRows: this.groupedRows,
         rowHeight: this.rowHeight,
         detailRowHeight: this.getDetailRowHeight,
         externalVirtual: this.scrollbarV && this.externalPaging,

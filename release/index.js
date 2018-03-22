@@ -1441,6 +1441,7 @@ var DataTableBodyComponent = /** @class */ (function () {
             while (rowIndex < last && rowIndex < this.groupedRows.length) {
                 // Add the groups into this page
                 var group = this.groupedRows[rowIndex];
+                this.rowIndexes.set(group, rowIndex);
                 temp[idx] = group;
                 idx++;
                 // Group index in this context
@@ -1529,8 +1530,9 @@ var DataTableBodyComponent = /** @class */ (function () {
             var idx = 0;
             if (this.groupedRows) {
                 // Get the latest row rowindex in a group
-                var row = rows[rows.length - 1];
-                idx = row ? this.getRowIndex(row) : 0;
+                // const row = rows[rows.length - 1];
+                // idx = row ? this.getRowIndex(row) : 0;
+                idx = this.getRowIndex(rows);
             }
             else {
                 idx = this.getRowIndex(rows);
@@ -1597,6 +1599,7 @@ var DataTableBodyComponent = /** @class */ (function () {
         if (this.rows && this.rows.length) {
             this.rowHeightsCache.initCache({
                 rows: this.rows,
+                groupedRows: this.groupedRows,
                 rowHeight: this.rowHeight,
                 detailRowHeight: this.getDetailRowHeight,
                 externalVirtual: this.scrollbarV && this.externalPaging,
@@ -2664,7 +2667,7 @@ var DatatableComponent = /** @class */ (function () {
             }
             // auto sort on new updates
             if (!this.externalSorting) {
-                this._internalRows = utils_1.sortRows(this._internalRows, this._internalColumns, this.sorts);
+                this.sortInternalRows();
             }
             // recalculate sizes/etc
             this.recalculate();
@@ -2928,7 +2931,7 @@ var DatatableComponent = /** @class */ (function () {
     DatatableComponent.prototype.ngAfterViewInit = function () {
         var _this = this;
         if (!this.externalSorting) {
-            this._internalRows = utils_1.sortRows(this._internalRows, this._internalColumns, this.sorts);
+            this.sortInternalRows();
         }
         // this has to be done to prevent the change detection
         // tree from freaking out because we are readjusting
@@ -2968,6 +2971,7 @@ var DatatableComponent = /** @class */ (function () {
                 this._internalColumns = utils_1.translateTemplates(arr);
                 utils_1.setColumnDefaults(this._internalColumns);
                 this.recalculateColumns();
+                this.sortInternalRows();
                 this.cd.markForCheck();
             }
         }
@@ -3004,7 +3008,7 @@ var DatatableComponent = /** @class */ (function () {
     DatatableComponent.prototype.ngDoCheck = function () {
         if (this.rowDiffer.diff(this.rows)) {
             if (!this.externalSorting) {
-                this._internalRows = utils_1.sortRows(this._internalRows, this._internalColumns, this.sorts);
+                this.sortInternalRows();
             }
             else {
                 this._internalRows = this.rows.slice();
@@ -3232,14 +3236,13 @@ var DatatableComponent = /** @class */ (function () {
                 selected: this.selected
             });
         }
-        var sorts = event.sorts;
+        this.sorts = event.sorts;
         // this could be optimized better since it will resort
         // the rows again on the 'push' detection...
         if (this.externalSorting === false) {
             // don't use normal setter so we don't resort
-            this._internalRows = utils_1.sortRows(this._internalRows, this._internalColumns, sorts);
+            this.sortInternalRows();
         }
-        this.sorts = sorts;
         // Always go to first page when sorting to see the newly sorted data
         this.offset = 0;
         this.bodyComponent.updateOffsetY(this.offset);
@@ -3281,6 +3284,9 @@ var DatatableComponent = /** @class */ (function () {
      */
     DatatableComponent.prototype.onBodySelect = function (event) {
         this.select.emit(event);
+    };
+    DatatableComponent.prototype.sortInternalRows = function () {
+        this._internalRows = utils_1.sortRows(this._internalRows, this._internalColumns, this.sorts);
     };
     __decorate([
         core_1.Input(),
@@ -6337,7 +6343,7 @@ var RowHeightCache = /** @class */ (function () {
      * @param detailRowHeight The detail row height.
      */
     RowHeightCache.prototype.initCache = function (details) {
-        var rows = details.rows, rowHeight = details.rowHeight, detailRowHeight = details.detailRowHeight, externalVirtual = details.externalVirtual, rowCount = details.rowCount, rowIndexes = details.rowIndexes, rowExpansions = details.rowExpansions;
+        var rows = details.rows, groupedRows = details.groupedRows, rowHeight = details.rowHeight, detailRowHeight = details.detailRowHeight, externalVirtual = details.externalVirtual, rowCount = details.rowCount, rowIndexes = details.rowIndexes, rowExpansions = details.rowExpansions;
         var isFn = typeof rowHeight === 'function';
         var isDetailFn = typeof detailRowHeight === 'function';
         if (!isFn && isNaN(rowHeight)) {
@@ -6347,30 +6353,43 @@ var RowHeightCache = /** @class */ (function () {
         if (!isDetailFn && isNaN(detailRowHeight)) {
             throw new Error("Row Height cache initialization failed. Please ensure that 'detailRowHeight' is a\n        valid number or function value: (" + detailRowHeight + ") when 'scrollbarV' is enabled.");
         }
-        var n = externalVirtual ? rowCount : rows.length;
+        var l = groupedRows ? groupedRows.length : rows.length;
+        var n = externalVirtual ? rowCount : l;
         this.treeArray = new Array(n);
         for (var i = 0; i < n; ++i) {
             this.treeArray[i] = 0;
         }
-        for (var i = 0; i < n; ++i) {
-            var row = rows[i];
-            var currentRowHeight = rowHeight;
-            if (isFn) {
-                currentRowHeight = rowHeight(row);
-            }
-            // Add the detail row height to the already expanded rows.
-            // This is useful for the table that goes through a filter or sort.
-            var expanded = rowExpansions.get(row);
-            if (row && expanded === 1) {
-                if (isDetailFn) {
-                    var index = rowIndexes.get(row);
-                    currentRowHeight += detailRowHeight(row, index);
+        if (groupedRows) {
+            for (var i = 0; i < n; ++i) {
+                var group = groupedRows[i];
+                var currentRowHeight = rowHeight;
+                if (isFn) {
+                    currentRowHeight = rowHeight(group);
                 }
-                else {
-                    currentRowHeight += detailRowHeight;
-                }
+                this.update(i, currentRowHeight);
             }
-            this.update(i, currentRowHeight);
+        }
+        else {
+            for (var i = 0; i < n; ++i) {
+                var row = rows[i];
+                var currentRowHeight = rowHeight;
+                if (isFn) {
+                    currentRowHeight = rowHeight(row);
+                }
+                // Add the detail row height to the already expanded rows.
+                // This is useful for the table that goes through a filter or sort.
+                var expanded = rowExpansions.get(row);
+                if (row && expanded === 1) {
+                    if (isDetailFn) {
+                        var index = rowIndexes.get(row);
+                        currentRowHeight += detailRowHeight(row, index);
+                    }
+                    else {
+                        currentRowHeight += detailRowHeight;
+                    }
+                }
+                this.update(i, currentRowHeight);
+            }
         }
     };
     /**
