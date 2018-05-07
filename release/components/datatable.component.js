@@ -673,16 +673,24 @@ var DatatableComponent = /** @class */ (function () {
      */
     DatatableComponent.prototype.calcPageSize = function (val) {
         if (val === void 0) { val = this.rows; }
+        // if limit is passed, we are paging
+        if (this.limit !== undefined) {
+            return this.limit;
+        }
         // Keep the page size constant even if the row has been expanded.
         // This is because an expanded row is still considered to be a child of
         // the original row.  Hence calculation would use rowHeight only.
         if (this.scrollbarV) {
-            var size = Math.ceil(this.bodyHeight / this.rowHeight);
+            // if its a function return it
+            var height = void 0;
+            if (typeof this.rowHeight === 'function') {
+                height = this.rowHeight();
+            }
+            else {
+                height = this.rowHeight;
+            }
+            var size = Math.ceil(this.bodyHeight / height);
             return Math.max(size, 0);
-        }
-        // if limit is passed, we are paging
-        if (this.limit !== undefined) {
-            return this.limit;
         }
         // otherwise use row length
         if (val) {
@@ -864,7 +872,7 @@ var DatatableComponent = /** @class */ (function () {
     ], DatatableComponent.prototype, "scrollbarH", void 0);
     __decorate([
         core_1.Input(),
-        __metadata("design:type", Number)
+        __metadata("design:type", Object)
     ], DatatableComponent.prototype, "rowHeight", void 0);
     __decorate([
         core_1.Input(),

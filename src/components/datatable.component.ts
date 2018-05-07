@@ -118,7 +118,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     if (val) {
       this._internalRows = [...val];
     }
-    
+
     // auto sort on new updates
     if (!this.externalSorting) {
       this.sortInternalRows();
@@ -217,7 +217,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * The row height; which is necessary
    * to calculate the height for the lazy rendering.
    */
-  @Input() rowHeight: number = 30;
+  @Input() rowHeight: number | ((row?: any) => number) = 30;
 
   /**
    * Type of column width distribution formula.
@@ -486,7 +486,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    */
   @HostBinding('class.fixed-row')
   get isFixedRow(): boolean {
-    const rowHeight: number | string = this.rowHeight;
+    const rowHeight: number | ((row?: any) => number) | string = this.rowHeight;
     return (typeof rowHeight === 'string') ?
       (<string>rowHeight) !== 'auto' : true;
   }
@@ -681,7 +681,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     if (typeof requestAnimationFrame === 'undefined') {
       return;
     }
-    
+
     requestAnimationFrame(() => {
       this.recalculate();
 
@@ -893,17 +893,24 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * Recalculates the sizes of the page
    */
   calcPageSize(val: any[] = this.rows): number {
+    // if limit is passed, we are paging
+    if (this.limit !== undefined) {
+      return this.limit;
+    }
+
     // Keep the page size constant even if the row has been expanded.
     // This is because an expanded row is still considered to be a child of
     // the original row.  Hence calculation would use rowHeight only.
     if (this.scrollbarV) {
-      const size = Math.ceil(this.bodyHeight / this.rowHeight);
+      // if its a function return it
+      let height;
+      if (typeof this.rowHeight === 'function') {
+        height = this.rowHeight();
+      } else {
+        height = this.rowHeight;
+      }
+      const size = Math.ceil(this.bodyHeight / height);
       return Math.max(size, 0);
-    }
-
-    // if limit is passed, we are paging
-    if (this.limit !== undefined) {
-      return this.limit;
     }
 
     // otherwise use row length
@@ -1068,7 +1075,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   onBodySelect(event: any): void {
     this.select.emit(event);
   }
-  
+
   private sortInternalRows(): void {
     this._internalRows = sortRows(this._internalRows, this._internalColumns, this.sorts);
   }

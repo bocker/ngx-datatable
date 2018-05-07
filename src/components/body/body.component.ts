@@ -482,15 +482,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
 
     if (this.scrollbarV) {
       let idx = 0;
-
-      if (this.groupedRows) {
-        // Get the latest row rowindex in a group
-        // const row = rows[rows.length - 1];
-        // idx = row ? this.getRowIndex(row) : 0;
-        idx = this.getRowIndex(rows);
-      } else {
-        idx = this.getRowIndex(rows);
-      }
+      idx = this.getRowIndex(rows);
 
       // const pos = idx * rowHeight;
       // The position of this row would be the sum of all row heights

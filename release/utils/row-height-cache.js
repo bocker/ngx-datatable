@@ -42,8 +42,7 @@ var RowHeightCache = /** @class */ (function () {
         if (!isDetailFn && isNaN(detailRowHeight)) {
             throw new Error("Row Height cache initialization failed. Please ensure that 'detailRowHeight' is a\n        valid number or function value: (" + detailRowHeight + ") when 'scrollbarV' is enabled.");
         }
-        var l = groupedRows ? groupedRows.length : rows.length;
-        var n = externalVirtual ? rowCount : l;
+        var n = groupedRows ? groupedRows.length : rows.length;
         this.treeArray = new Array(n);
         for (var i = 0; i < n; ++i) {
             this.treeArray[i] = 0;

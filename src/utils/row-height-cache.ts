@@ -47,8 +47,7 @@ export class RowHeightCache {
         valid number or function value: (${detailRowHeight}) when 'scrollbarV' is enabled.`);
     }
 
-    const l = groupedRows ? groupedRows.length : rows.length;
-    const n = externalVirtual ? rowCount : l;
+    const n = groupedRows ? groupedRows.length : rows.length;
     this.treeArray = new Array(n);
 
     for(let i = 0; i < n; ++i) {

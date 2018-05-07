@@ -64,7 +64,7 @@ export declare class DatatableComponent implements OnInit, DoCheck, AfterViewIni
      * The row height; which is necessary
      * to calculate the height for the lazy rendering.
      */
-    rowHeight: number;
+    rowHeight: number | ((row?: any) => number);
     /**
      * Type of column width distribution formula.
      * Example: flex, force, standard

@@ -1528,15 +1528,7 @@ var DataTableBodyComponent = /** @class */ (function () {
         }
         if (this.scrollbarV) {
             var idx = 0;
-            if (this.groupedRows) {
-                // Get the latest row rowindex in a group
-                // const row = rows[rows.length - 1];
-                // idx = row ? this.getRowIndex(row) : 0;
-                idx = this.getRowIndex(rows);
-            }
-            else {
-                idx = this.getRowIndex(rows);
-            }
+            idx = this.getRowIndex(rows);
             // const pos = idx * rowHeight;
             // The position of this row would be the sum of all row heights
             // until the previous row position.
@@ -3130,16 +3122,24 @@ var DatatableComponent = /** @class */ (function () {
      */
     DatatableComponent.prototype.calcPageSize = function (val) {
         if (val === void 0) { val = this.rows; }
+        // if limit is passed, we are paging
+        if (this.limit !== undefined) {
+            return this.limit;
+        }
         // Keep the page size constant even if the row has been expanded.
         // This is because an expanded row is still considered to be a child of
         // the original row.  Hence calculation would use rowHeight only.
         if (this.scrollbarV) {
-            var size = Math.ceil(this.bodyHeight / this.rowHeight);
+            // if its a function return it
+            var height = void 0;
+            if (typeof this.rowHeight === 'function') {
+                height = this.rowHeight();
+            }
+            else {
+                height = this.rowHeight;
+            }
+            var size = Math.ceil(this.bodyHeight / height);
             return Math.max(size, 0);
-        }
-        // if limit is passed, we are paging
-        if (this.limit !== undefined) {
-            return this.limit;
         }
         // otherwise use row length
         if (val) {
@@ -3321,7 +3321,7 @@ var DatatableComponent = /** @class */ (function () {
     ], DatatableComponent.prototype, "scrollbarH", void 0);
     __decorate([
         core_1.Input(),
-        __metadata("design:type", Number)
+        __metadata("design:type", Object)
     ], DatatableComponent.prototype, "rowHeight", void 0);
     __decorate([
         core_1.Input(),
@@ -6353,8 +6353,7 @@ var RowHeightCache = /** @class */ (function () {
         if (!isDetailFn && isNaN(detailRowHeight)) {
             throw new Error("Row Height cache initialization failed. Please ensure that 'detailRowHeight' is a\n        valid number or function value: (" + detailRowHeight + ") when 'scrollbarV' is enabled.");
         }
-        var l = groupedRows ? groupedRows.length : rows.length;
-        var n = externalVirtual ? rowCount : l;
+        var n = groupedRows ? groupedRows.length : rows.length;
         this.treeArray = new Array(n);
         for (var i = 0; i < n; ++i) {
             this.treeArray[i] = 0;
